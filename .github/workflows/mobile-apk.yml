@@ -1,0 +1,69 @@
+name: Build Mobile APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+        - preview
+        - production
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: mobile
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build APK with EAS
+        id: build
+        run: |
+          eas build --platform android --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive --wait --json > build-output.json
+          cat build-output.json
+          BUILD_URL=$(cat build-output.json | jq -r '.artifacts.buildUrl // empty')
+          if [ -n "$BUILD_URL" ]; then
+            echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+          else
+            echo "Failed to get build URL from EAS output"
+            exit 1
+          fi
+
+      - name: Download APK
+        if: success() && steps.build.outputs.build_url
+        run: |
+          curl -L "${{ steps.build.outputs.build_url }}" -o escola-seguranca.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: escola-seguranca-${{ github.event.inputs.profile || 'preview' }}-${{ github.sha }}
+          path: mobile/escola-seguranca.apk
+          retention-days: 30

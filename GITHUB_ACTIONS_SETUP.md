@@ -178,13 +178,82 @@ on:
       - '**.md'  # Ignorar arquivos markdown
 ```
 
+## 📱 Construção de APK Específica
+
+### Dependências Pendentes
+Antes de fazer o build, adicione as seguintes dependências ao `mobile/package.json`:
+
+```bash
+cd mobile
+npm install react-native-chart-kit @react-native-community/datetimepicker@7.6.3 --legacy-peer-deps
+npm run lint --fix
+```
+
+### Configuração do Firebase
+Configure as variáveis de ambiente do Firebase no projeto Expo ou no `mobile/eas.json`:
+
+**Opção 1: Via EAS Project (Recomendado)**
+```bash
+cd mobile
+eas env:set EXPO_PUBLIC_FIREBASE_API_KEY=sua-api-key
+eas env:set EXPO_PUBLIC_FIREBASE_PROJECT_ID=seu-project-id
+eas env:set EXPO_PUBLIC_FIREBASE_APP_ID=seu-app-id
+eas env:set EXPO_PUBLIC_FIREBASE_SENDER_ID=seu-sender-id
+```
+
+**Opção 2: Via eas.json**
+```json
+{
+  "build": {
+    "preview": {
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "sua-api-key",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "seu-project-id",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "seu-app-id",
+        "EXPO_PUBLIC_FIREBASE_SENDER_ID": "seu-sender-id"
+      }
+    }
+  }
+}
+```
+
+### Comandos de Build Manual
+
+```bash
+# Preview APK (recomendado para teste)
+cd mobile && eas build -p android --profile preview --wait
+
+# Production AAB (para Google Play Store)
+cd mobile && eas build -p android --profile production --wait
+
+# iOS (se necessário)
+cd mobile && eas build -p ios --profile production --wait
+```
+
+### Workflow GitHub Actions para APK
+
+O arquivo `.github/workflows/mobile-apk.yml` já foi criado com as seguintes características:
+
+- **Trigger**: Manual (workflow_dispatch) para evitar conflitos com mobile.yml existente
+- **Perfis**: Permite escolher entre 'preview' (APK) e 'production' (AAB)
+- **Download automático**: Baixa e disponibiliza o APK como artifact
+- **Integração EAS**: Usa EAS Build cloud corretamente
+
+Para usar:
+1. Vá para Actions > Build Mobile APK
+2. Clique em "Run workflow" 
+3. Escolha o perfil desejado
+4. Baixe o artifact gerado
+
 ## 🚀 Próximos Passos
 
-1. ✅ Configure os secrets necessários
-2. ✅ Teste com um Pull Request
-3. ✅ Verifique os previews funcionando
-4. ✅ Configure deploy para produção
-5. ✅ Monitore os builds e otimize conforme necessário
+1. ✅ Configure os secrets necessários (especialmente EXPO_TOKEN)
+2. ✅ Instale as dependências pendentes no mobile
+3. ✅ Configure as variáveis de ambiente do Firebase
+4. ✅ Teste o build local primeiro com `eas build`
+5. ✅ Crie o workflow para builds automáticos
+6. ✅ Teste com um Pull Request
+7. ✅ Monitore os builds e otimize conforme necessário
 
 ---
 
