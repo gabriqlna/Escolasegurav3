@@ -45,7 +45,7 @@
     "react-native-reanimated": "~3.10.1",
     "react-native-maps": "1.14.0",
     "react-hook-form": "^7.48.2",
-    "@hookform/resolvers": "^3.3.2",
+    "@hookform/resolvers": "^5.2.2",
     "zod": "^3.22.4",
     "zustand": "^4.4.7",
     "dayjs": "^1.11.10",
