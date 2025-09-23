@@ -1,0 +1,74 @@
+name: Build React Native Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+        - preview
+        - production
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build-android-apk:
+    name: Build Android APK with EAS
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./mobile
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: mobile/package-lock.json
+        
+    - name: Install Expo CLI and EAS CLI
+      run: |
+        npm install -g @expo/cli@latest
+        npm install -g eas-cli@latest
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Verify EAS configuration
+      run: |
+        echo "Checking EAS configuration..."
+        cat eas.json || echo "No eas.json found - using default configuration"
+        
+    - name: Build Android APK
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      run: |
+        echo "Building Android APK with profile: ${{ github.event.inputs.build_profile || 'preview' }}"
+        if [ -n "$EXPO_TOKEN" ]; then
+          eas build --platform android --profile ${{ github.event.inputs.build_profile || 'preview' }} --non-interactive
+        else
+          echo "⚠️  EXPO_TOKEN not found in secrets."
+          echo "To enable EAS builds, add your Expo access token to repository secrets:"
+          echo "1. Go to https://expo.dev/accounts/[username]/settings/access-tokens"
+          echo "2. Create a new token"
+          echo "3. Add it as EXPO_TOKEN in GitHub repository secrets"
+          echo ""
+          echo "For local builds, use: npx expo run:android --device"
+          exit 1
+        fi
+        
+    - name: Download APK artifact
+      if: success()
+      run: |
+        echo "APK build completed successfully!"
+        echo "Check your Expo dashboard for the download link:"
+        echo "https://expo.dev/accounts/[username]/projects/escola-seguranca-mobile/builds"

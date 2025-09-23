@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isActiveUser() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId) || hasRole('direcao');
+      allow create: if isOwner(userId) && isAuthenticated();
+      allow update: if isOwner(userId) || hasRole('direcao');
+      allow delete: if hasRole('direcao');
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      allow read: if isActiveUser() && (
+        resource.data.reporterId == request.auth.uid ||
+        hasRole('funcionario') ||
+        hasRole('direcao')
+      );
+      allow create: if isActiveUser();
+      allow update: if isActiveUser() && (
+        hasRole('funcionario') || hasRole('direcao')
+      );
+      allow delete: if hasRole('direcao');
+    }
+
+    // Emergency alerts collection
+    match /emergency_alerts/{alertId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser(); // Permitir que qualquer usuário ativo crie alertas (incluindo pânico)
+      allow update, delete: if hasRole('direcao'); // Apenas direção pode atualizar/resolver
+    }
+
+    // Visitors collection
+    match /visitors/{visitorId} {
+      allow read, create, update: if isActiveUser() && (
+        hasRole('funcionario') || hasRole('direcao')
+      );
+      allow delete: if hasRole('direcao');
+    }
+
+    // Campaigns collection
+    match /campaigns/{campaignId} {
+      allow read: if isActiveUser();
+      allow create, update, delete: if hasRole('direcao');
+    }
+
+    // Incidents collection
+    match /incidents/{incidentId} {
+      allow read, create, update: if isActiveUser() && (
+        hasRole('funcionario') || hasRole('direcao')
+      );
+      allow delete: if hasRole('direcao');
+    }
+
+    // Checklist items collection
+    match /checklist_items/{itemId} {
+      allow read: if isActiveUser();
+      allow create, delete: if hasRole('direcao');
+      allow update: if isActiveUser() && (
+        hasRole('funcionario') || hasRole('direcao')
+      );
+    }
+
+    // Drills collection
+    match /drills/{drillId} {
+      allow read: if isActiveUser();
+      allow create, update, delete: if hasRole('direcao');
+    }
+
+    // Notices collection
+    match /notices/{noticeId} {
+      allow read: if isActiveUser();
+      allow create, update, delete: if hasRole('direcao');
+    }
+
+    // Contacts collection
+    match /contacts/{contactId} {
+      allow read: if isActiveUser();
+      allow create, update, delete: if hasRole('direcao');
+    }
+
+    // Evacuation plans collection
+    match /evacuation_plans/{planId} {
+      allow read: if isActiveUser();
+      allow create, update, delete: if hasRole('direcao');
+    }
+
+    // Risk areas collection
+    match /risk_areas/{areaId} {
+      allow read: if isActiveUser();
+      allow create, update, delete: if hasRole('direcao');
+    }
+
+    // Deny all other documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
