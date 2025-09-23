@@ -111,6 +111,7 @@ export default function IncidentsScreen() {
 
   const handleStatusUpdate = (incident: Incident, newStatus: Incident['status']) => {
     const actionLabels = {
+      open: 'marcar como aberto',
       in_progress: 'marcar como em andamento',
       resolved: 'marcar como resolvido',
       closed: 'fechar ocorrência'
