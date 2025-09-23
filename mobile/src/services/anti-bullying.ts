@@ -12,8 +12,8 @@ import {
   limit as limitQuery,
   Timestamp,
   serverTimestamp 
-} from 'firebase/firestore';
-import { firestore, auth } from './firebase';
+} from 'firebase/db';
+import { db, auth } from './firebase';
 import { Report, ApiResponse } from '@/types';
 
 // Specialized Anti-Bullying report interface with additional fields
@@ -53,7 +53,7 @@ class AntiBullyingService {
         updatedAt: serverTimestamp()
       };
 
-      const docRef = await addDoc(collection(firestore, this.collectionName), enhancedReportData);
+      const docRef = await addDoc(collection(db, this.collectionName), enhancedReportData);
 
       const report: AntiBullyingReport = {
         ...enhancedReportData,
@@ -142,14 +142,14 @@ class AntiBullyingService {
   ): Promise<ApiResponse<AntiBullyingReport[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('createdAt', 'desc')
       );
 
       // If userId provided, filter by reporter (except anonymous)
       if (userId) {
         q = query(
-          collection(firestore, this.collectionName),
+          collection(db, this.collectionName),
           where('reporterId', '==', userId),
           orderBy('createdAt', 'desc')
         );
@@ -217,7 +217,7 @@ class AntiBullyingService {
         }
       }
 
-      await updateDoc(doc(firestore, this.collectionName, reportId), updateData);
+      await updateDoc(doc(db, this.collectionName, reportId), updateData);
 
       return {
         success: true,
@@ -235,7 +235,7 @@ class AntiBullyingService {
   async getHighRiskReports(): Promise<ApiResponse<AntiBullyingReport[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('isHighRisk', '==', true),
         where('status', 'in', ['pending', 'in_progress']),
         orderBy('createdAt', 'desc')
@@ -265,7 +265,7 @@ class AntiBullyingService {
 
   async getReportById(reportId: string): Promise<ApiResponse<AntiBullyingReport>> {
     try {
-      const docRef = doc(firestore, this.collectionName, reportId);
+      const docRef = doc(db, this.collectionName, reportId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
@@ -294,7 +294,7 @@ class AntiBullyingService {
 
   async deleteReport(reportId: string): Promise<ApiResponse<void>> {
     try {
-      await deleteDoc(doc(firestore, this.collectionName, reportId));
+      await deleteDoc(doc(db, this.collectionName, reportId));
       
       return {
         success: true,
@@ -349,7 +349,7 @@ class AntiBullyingService {
     resolved: number;
   }>> {
     try {
-      const querySnapshot = await getDocs(collection(firestore, this.collectionName));
+      const querySnapshot = await getDocs(collection(db, this.collectionName));
       
       const stats = {
         total: 0,

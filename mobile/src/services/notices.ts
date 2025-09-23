@@ -13,8 +13,8 @@ import {
   Timestamp,
   serverTimestamp,
   arrayUnion 
-} from 'firebase/firestore';
-import { firestore } from './firebase';
+} from 'firebase/db';
+import { db } from './firebase';
 import { Notice, ApiResponse } from '@/types';
 
 class NoticesService {
@@ -22,7 +22,7 @@ class NoticesService {
 
   async createNotice(noticeData: Omit<Notice, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Notice>> {
     try {
-      const docRef = await addDoc(collection(firestore, this.collectionName), {
+      const docRef = await addDoc(collection(db, this.collectionName), {
         ...noticeData,
         readBy: [],
         createdAt: serverTimestamp(),
@@ -55,7 +55,7 @@ class NoticesService {
     try {
       const now = new Date();
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('isActive', '==', true),
         orderBy('createdAt', 'desc')
       );
@@ -102,7 +102,7 @@ class NoticesService {
   async getAllNotices(limit?: number): Promise<ApiResponse<Notice[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('createdAt', 'desc')
       );
 
@@ -146,7 +146,7 @@ class NoticesService {
 
   async markAsRead(noticeId: string, userId: string): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, noticeId), {
+      await updateDoc(doc(db, this.collectionName, noticeId), {
         readBy: arrayUnion(userId)
       });
 
@@ -165,7 +165,7 @@ class NoticesService {
 
   async updateNotice(noticeId: string, updateData: Partial<Omit<Notice, 'id' | 'createdAt' | 'createdBy'>>): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, noticeId), {
+      await updateDoc(doc(db, this.collectionName, noticeId), {
         ...updateData,
         updatedAt: serverTimestamp()
       });
@@ -185,7 +185,7 @@ class NoticesService {
 
   async deactivateNotice(noticeId: string): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, noticeId), {
+      await updateDoc(doc(db, this.collectionName, noticeId), {
         isActive: false,
         updatedAt: serverTimestamp()
       });
@@ -233,7 +233,7 @@ class NoticesService {
 
   async deleteNotice(noticeId: string): Promise<ApiResponse<void>> {
     try {
-      await deleteDoc(doc(firestore, this.collectionName, noticeId));
+      await deleteDoc(doc(db, this.collectionName, noticeId));
       
       return {
         success: true,
@@ -250,7 +250,7 @@ class NoticesService {
 
   async getNoticeById(noticeId: string): Promise<ApiResponse<Notice>> {
     try {
-      const docRef = doc(firestore, this.collectionName, noticeId);
+      const docRef = doc(db, this.collectionName, noticeId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
@@ -292,7 +292,7 @@ class NoticesService {
   async getUnreadNotices(userId: string, userRole?: string): Promise<ApiResponse<Notice[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('isActive', '==', true),
         orderBy('createdAt', 'desc')
       );

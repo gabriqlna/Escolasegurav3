@@ -12,8 +12,8 @@ import {
   limit as limitQuery,
   Timestamp,
   serverTimestamp 
-} from 'firebase/firestore';
-import { firestore } from './firebase';
+} from 'firebase/db';
+import { db } from './firebase';
 import { EmergencyAlert, ApiResponse } from '@/types';
 
 class EmergencyService {
@@ -21,7 +21,7 @@ class EmergencyService {
 
   async createEmergencyAlert(alertData: Omit<EmergencyAlert, 'id' | 'createdAt'>): Promise<ApiResponse<EmergencyAlert>> {
     try {
-      const docRef = await addDoc(collection(firestore, this.collectionName), {
+      const docRef = await addDoc(collection(db, this.collectionName), {
         ...alertData,
         createdAt: serverTimestamp()
       });
@@ -49,7 +49,7 @@ class EmergencyService {
   async getActiveAlerts(): Promise<ApiResponse<EmergencyAlert[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('isActive', '==', true),
         orderBy('createdAt', 'desc')
       );
@@ -91,7 +91,7 @@ class EmergencyService {
   async getAllAlerts(limit?: number): Promise<ApiResponse<EmergencyAlert[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('createdAt', 'desc')
       );
 
@@ -135,7 +135,7 @@ class EmergencyService {
 
   async resolveAlert(alertId: string, resolvedBy: string): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, alertId), {
+      await updateDoc(doc(db, this.collectionName, alertId), {
         isActive: false,
         resolvedAt: serverTimestamp(),
         resolvedBy: resolvedBy
@@ -204,7 +204,7 @@ class EmergencyService {
 
   async getAlertById(alertId: string): Promise<ApiResponse<EmergencyAlert>> {
     try {
-      const docRef = doc(firestore, this.collectionName, alertId);
+      const docRef = doc(db, this.collectionName, alertId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
@@ -245,7 +245,7 @@ class EmergencyService {
 
   async deleteAlert(alertId: string): Promise<ApiResponse<void>> {
     try {
-      await deleteDoc(doc(firestore, this.collectionName, alertId));
+      await deleteDoc(doc(db, this.collectionName, alertId));
       
       return {
         success: true,

@@ -12,8 +12,8 @@ import {
   limit as limitQuery,
   Timestamp,
   serverTimestamp 
-} from 'firebase/firestore';
-import { firestore, auth } from './firebase';
+} from 'firebase/db';
+import { db, auth } from './firebase';
 import { Incident, ApiResponse, UserRole } from '@/types';
 
 class IncidentsService {
@@ -21,7 +21,7 @@ class IncidentsService {
 
   async createIncident(incidentData: Omit<Incident, 'id' | 'reportedAt' | 'updatedAt'>): Promise<ApiResponse<Incident>> {
     try {
-      const docRef = await addDoc(collection(firestore, this.collectionName), {
+      const docRef = await addDoc(collection(db, this.collectionName), {
         ...incidentData,
         reportedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -51,7 +51,7 @@ class IncidentsService {
   async getAllIncidents(limit?: number): Promise<ApiResponse<Incident[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('reportedAt', 'desc')
       );
 
@@ -98,7 +98,7 @@ class IncidentsService {
   async getIncidentsByCategory(category: Incident['category']): Promise<ApiResponse<Incident[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('category', '==', category),
         orderBy('reportedAt', 'desc')
       );
@@ -142,7 +142,7 @@ class IncidentsService {
   async getOpenIncidents(): Promise<ApiResponse<Incident[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('status', 'in', ['open', 'in_progress']),
         orderBy('reportedAt', 'desc')
       );
@@ -186,7 +186,7 @@ class IncidentsService {
   async getCriticalIncidents(): Promise<ApiResponse<Incident[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('severity', '==', 'critical'),
         where('status', '!=', 'closed'),
         orderBy('reportedAt', 'desc')
@@ -243,7 +243,7 @@ class IncidentsService {
         updateData.actionsTaken = actionsTaken;
       }
 
-      await updateDoc(doc(firestore, this.collectionName, incidentId), updateData);
+      await updateDoc(doc(db, this.collectionName, incidentId), updateData);
 
       return {
         success: true,
@@ -260,7 +260,7 @@ class IncidentsService {
 
   async addActionsTaken(incidentId: string, actionsTaken: string): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, incidentId), {
+      await updateDoc(doc(db, this.collectionName, incidentId), {
         actionsTaken,
         updatedAt: serverTimestamp()
       });
@@ -280,7 +280,7 @@ class IncidentsService {
 
   async markFollowUpRequired(incidentId: string, required: boolean): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, incidentId), {
+      await updateDoc(doc(db, this.collectionName, incidentId), {
         followUpRequired: required,
         updatedAt: serverTimestamp()
       });
@@ -300,7 +300,7 @@ class IncidentsService {
 
   async getIncidentById(incidentId: string): Promise<ApiResponse<Incident>> {
     try {
-      const docRef = doc(firestore, this.collectionName, incidentId);
+      const docRef = doc(db, this.collectionName, incidentId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
@@ -343,7 +343,7 @@ class IncidentsService {
 
   async deleteIncident(incidentId: string): Promise<ApiResponse<void>> {
     try {
-      await deleteDoc(doc(firestore, this.collectionName, incidentId));
+      await deleteDoc(doc(db, this.collectionName, incidentId));
       
       return {
         success: true,
@@ -361,7 +361,7 @@ class IncidentsService {
   async getIncidentsByDateRange(startDate: Date, endDate: Date): Promise<ApiResponse<Incident[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('reportedAt', '>=', Timestamp.fromDate(startDate)),
         where('reportedAt', '<=', Timestamp.fromDate(endDate)),
         orderBy('reportedAt', 'desc')
@@ -414,7 +414,7 @@ class IncidentsService {
     criticalIncidents: number;
   }>> {
     try {
-      const querySnapshot = await getDocs(collection(firestore, this.collectionName));
+      const querySnapshot = await getDocs(collection(db, this.collectionName));
       
       const stats = {
         total: 0,

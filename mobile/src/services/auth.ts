@@ -5,8 +5,8 @@ import {
   User as FirebaseUser,
   UserCredential 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, firestore } from './firebase';
+import { doc, setDoc, getDoc } from 'firebase/db';
+import { auth, db } from './firebase';
 import { User, LoginForm, RegisterForm, ApiResponse } from '@/types';
 
 class AuthService {
@@ -17,7 +17,7 @@ class AuthService {
       const firebaseUser = userCredential.user;
       
       // Get user data from Firestore
-      const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
       
       if (!userDoc.exists()) {
         throw new Error('Dados do usuário não encontrados');
@@ -71,7 +71,7 @@ class AuthService {
         updatedAt: new Date()
       };
       
-      await setDoc(doc(firestore, 'users', firebaseUser.uid), userData);
+      await setDoc(doc(db, 'users', firebaseUser.uid), userData);
       
       const user: User = {
         id: firebaseUser.uid,
@@ -117,7 +117,7 @@ class AuthService {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) return null;
       
-      const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
       if (!userDoc.exists()) return null;
       
       const userData = userDoc.data();

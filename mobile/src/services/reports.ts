@@ -12,8 +12,8 @@ import {
   limit as limitQuery,
   Timestamp,
   serverTimestamp 
-} from 'firebase/firestore';
-import { firestore, auth } from './firebase';
+} from 'firebase/db';
+import { db, auth } from './firebase';
 import { Report, ApiResponse } from '@/types';
 
 class ReportsService {
@@ -21,7 +21,7 @@ class ReportsService {
 
   async createReport(reportData: Omit<Report, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Report>> {
     try {
-      const docRef = await addDoc(collection(firestore, this.collectionName), {
+      const docRef = await addDoc(collection(db, this.collectionName), {
         ...reportData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -51,14 +51,14 @@ class ReportsService {
   async getReports(userId?: string, limit?: number): Promise<ApiResponse<Report[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('createdAt', 'desc')
       );
 
       // Se userId for fornecido, filtrar por reportador (exceto denúncias anônimas)
       if (userId) {
         q = query(
-          collection(firestore, this.collectionName),
+          collection(db, this.collectionName),
           where('reporterId', '==', userId),
           orderBy('createdAt', 'desc')
         );
@@ -108,7 +108,7 @@ class ReportsService {
   async getAllReports(limit?: number): Promise<ApiResponse<Report[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('createdAt', 'desc')
       );
 
@@ -171,7 +171,7 @@ class ReportsService {
         updateData.resolvedBy = resolvedBy;
       }
 
-      await updateDoc(doc(firestore, this.collectionName, reportId), updateData);
+      await updateDoc(doc(db, this.collectionName, reportId), updateData);
 
       return {
         success: true,
@@ -189,7 +189,7 @@ class ReportsService {
   async getReportsByType(type: Report['type']): Promise<ApiResponse<Report[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('type', '==', type),
         orderBy('createdAt', 'desc')
       );
@@ -234,7 +234,7 @@ class ReportsService {
   async getReportsByStatus(status: Report['status']): Promise<ApiResponse<Report[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('status', '==', status),
         orderBy('createdAt', 'desc')
       );
@@ -278,7 +278,7 @@ class ReportsService {
 
   async getReportById(reportId: string): Promise<ApiResponse<Report>> {
     try {
-      const docRef = doc(firestore, this.collectionName, reportId);
+      const docRef = doc(db, this.collectionName, reportId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
@@ -322,7 +322,7 @@ class ReportsService {
 
   async deleteReport(reportId: string): Promise<ApiResponse<void>> {
     try {
-      await deleteDoc(doc(firestore, this.collectionName, reportId));
+      await deleteDoc(doc(db, this.collectionName, reportId));
       
       return {
         success: true,

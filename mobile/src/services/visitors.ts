@@ -12,8 +12,8 @@ import {
   limit as limitQuery,
   Timestamp,
   serverTimestamp 
-} from 'firebase/firestore';
-import { firestore } from './firebase';
+} from 'firebase/db';
+import { db } from './firebase';
 import { Visitor, ApiResponse } from '@/types';
 
 class VisitorsService {
@@ -21,7 +21,7 @@ class VisitorsService {
 
   async registerVisitor(visitorData: Omit<Visitor, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Visitor>> {
     try {
-      const docRef = await addDoc(collection(firestore, this.collectionName), {
+      const docRef = await addDoc(collection(db, this.collectionName), {
         ...visitorData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -50,7 +50,7 @@ class VisitorsService {
 
   async checkOutVisitor(visitorId: string, checkOutNote?: string): Promise<ApiResponse<void>> {
     try {
-      await updateDoc(doc(firestore, this.collectionName, visitorId), {
+      await updateDoc(doc(db, this.collectionName, visitorId), {
         checkOutTime: serverTimestamp(),
         checkOutNote: checkOutNote || '',
         status: 'checked_out',
@@ -73,7 +73,7 @@ class VisitorsService {
   async getActiveVisitors(): Promise<ApiResponse<Visitor[]>> {
     try {
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('status', '==', 'checked_in'),
         orderBy('checkInTime', 'desc')
       );
@@ -119,7 +119,7 @@ class VisitorsService {
   async getAllVisitors(limit?: number): Promise<ApiResponse<Visitor[]>> {
     try {
       let q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         orderBy('checkInTime', 'desc')
       );
 
@@ -174,7 +174,7 @@ class VisitorsService {
       endOfDay.setHours(23, 59, 59, 999);
 
       const q = query(
-        collection(firestore, this.collectionName),
+        collection(db, this.collectionName),
         where('checkInTime', '>=', Timestamp.fromDate(startOfDay)),
         where('checkInTime', '<=', Timestamp.fromDate(endOfDay)),
         orderBy('checkInTime', 'desc')
@@ -259,7 +259,7 @@ class VisitorsService {
 
   async deleteVisitor(visitorId: string): Promise<ApiResponse<void>> {
     try {
-      await deleteDoc(doc(firestore, this.collectionName, visitorId));
+      await deleteDoc(doc(db, this.collectionName, visitorId));
       
       return {
         success: true,
@@ -276,7 +276,7 @@ class VisitorsService {
 
   async getVisitorById(visitorId: string): Promise<ApiResponse<Visitor>> {
     try {
-      const docRef = doc(firestore, this.collectionName, visitorId);
+      const docRef = doc(db, this.collectionName, visitorId);
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
