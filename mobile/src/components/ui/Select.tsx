@@ -71,7 +71,7 @@ export const Select: React.FC<SelectProps> = ({
       <TouchableOpacity
         style={[
           styles.selectContainer,
-          error && styles.selectError,
+          error && error.trim() ? styles.selectError : undefined,
         ]}
         onPress={() => setIsModalVisible(true)}
       >

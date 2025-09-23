@@ -12,7 +12,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
+// import DateTimePicker from '@react-native-community/datetimepicker'; // Comentado temporariamente - package não instalado
+
+// Componente temporário até instalar @react-native-community/datetimepicker
+const DateTimePicker = ({ value, mode, display, onChange }: any) => (
+  <View style={{ padding: 16, backgroundColor: '#f0f0f0', borderRadius: 8, margin: 16 }}>
+    <Text style={{ color: '#666', textAlign: 'center' }}>📅 Seletor de Data{'\n'}(@react-native-community/datetimepicker pendente){'\n'}Data atual: {value?.toLocaleDateString()}</Text>
+  </View>
+);
 import { useAuth } from '@/contexts/AuthContext';
 import { visitorsService } from '@/services/visitors';
 import { Button } from '@/components/ui/Button';

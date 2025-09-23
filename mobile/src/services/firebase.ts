@@ -6,14 +6,14 @@ import { getFunctions, Functions } from 'firebase/functions';
 let AsyncStorage: any;
 
 // Firebase configuration using environment variables
-// For Replit compatibility, we use the same VITE_ environment variables as the web app
+// For React Native/Expo, we use EXPO_PUBLIC_ prefixed environment variables
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${process.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${process.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: `${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: `${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`,
   messagingSenderId: "123456789", // Placeholder - can be updated later
-  appId: process.env.VITE_FIREBASE_APP_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

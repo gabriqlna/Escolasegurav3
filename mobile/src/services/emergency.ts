@@ -164,7 +164,6 @@ class EmergencyService {
         if (status === 'granted') {
           const locationResult = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High,
-            timeout: 5000,
           });
           locationString = `Lat: ${locationResult.coords.latitude.toFixed(6)}, Lng: ${locationResult.coords.longitude.toFixed(6)}`;
         }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import { authService } from '@/services/auth';
-import { User, LoginForm, RegisterForm, ApiResponse } from '@/types';
+import { User, UserRole, LoginForm, RegisterForm, ApiResponse } from '@/types';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface AuthContextType {
@@ -12,7 +12,7 @@ interface AuthContextType {
   signUp: (data: RegisterForm) => Promise<ApiResponse<User>>;
   signOut: () => Promise<ApiResponse<void>>;
   hasPermission: (permission: string | string[]) => boolean;
-  hasRole: (role: string | string[]) => boolean;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
   isStudent: boolean;
   isStaff: boolean;
   isAdmin: boolean;

@@ -48,7 +48,7 @@ export const Input: React.FC<InputProps> = ({
       
       <View style={[
         styles.inputContainer,
-        error && styles.inputError,
+        error && error.trim() ? styles.inputError : undefined,
       ]}>
         {leftIcon && (
           <Ionicons 

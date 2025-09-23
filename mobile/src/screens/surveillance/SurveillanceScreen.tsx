@@ -12,7 +12,26 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
-import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
+// import { LineChart, BarChart, PieChart } from 'react-native-chart-kit'; // Comentado temporariamente - package não instalado
+
+// Componentes temporários até instalar react-native-chart-kit
+const LineChart = ({ data, width, height }: any) => (
+  <View style={{ width, height, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center', borderRadius: 8 }}>
+    <Text style={{ color: '#666', textAlign: 'center' }}>📈 Gráfico de Linha{'\n'}(react-native-chart-kit pendente)</Text>
+  </View>
+);
+
+const BarChart = ({ data, width, height }: any) => (
+  <View style={{ width, height, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center', borderRadius: 8 }}>
+    <Text style={{ color: '#666', textAlign: 'center' }}>📊 Gráfico de Barras{'\n'}(react-native-chart-kit pendente)</Text>
+  </View>
+);
+
+const PieChart = ({ data, width, height }: any) => (
+  <View style={{ width, height, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center', borderRadius: 8 }}>
+    <Text style={{ color: '#666', textAlign: 'center' }}>🥧 Gráfico de Pizza{'\n'}(react-native-chart-kit pendente)</Text>
+  </View>
+);
 
 const { width } = Dimensions.get('window');
 const chartWidth = width - 32;
