@@ -12,7 +12,7 @@ import {
   limit as limitQuery,
   Timestamp,
   serverTimestamp 
-} from 'firebase/db';
+} from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { Report, ApiResponse } from '@/types';
 

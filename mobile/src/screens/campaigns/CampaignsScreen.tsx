@@ -160,7 +160,9 @@ export default function CampaignsScreen() {
       startDate: new Date(),
       createdBy: 'admin',
       createdAt: new Date(),
-      imageUrl: 'https://example.com/image1.jpg'
+      imageUrl: 'https://example.com/image1.jpg',
+      views: 0,
+      completions: 0
     },
     {
       id: '2',
@@ -172,7 +174,9 @@ export default function CampaignsScreen() {
       isActive: true,
       startDate: new Date(),
       createdBy: 'admin',
-      createdAt: new Date()
+      createdAt: new Date(),
+      views: 0,
+      completions: 0
     },
     {
       id: '3',
@@ -184,7 +188,9 @@ export default function CampaignsScreen() {
       isActive: true,
       startDate: new Date(),
       createdBy: 'admin',
-      createdAt: new Date()
+      createdAt: new Date(),
+      views: 0,
+      completions: 0
     }
   ];
 

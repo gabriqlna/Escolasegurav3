@@ -13,7 +13,7 @@ import {
   Timestamp,
   serverTimestamp,
   arrayUnion 
-} from 'firebase/db';
+} from 'firebase/firestore';
 import { db } from './firebase';
 import { Notice, ApiResponse } from '@/types';
 

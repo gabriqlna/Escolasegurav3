@@ -5,7 +5,7 @@ import {
   User as FirebaseUser,
   UserCredential 
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/db';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { User, LoginForm, RegisterForm, ApiResponse } from '@/types';
 
