@@ -3,6 +3,9 @@ import { logout } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter } from '@/components/ui/sidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationManager } from '@/components/NotificationManager';
+import { useNotifications } from '@/hooks/useNotifications';
 import { USER_ROLES } from '@shared/schema';
 import { 
   Home,
@@ -31,6 +34,13 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, hasPermission } = useAuth();
   const location = useLocation();
+  const { 
+    notifications, 
+    markAsRead, 
+    markAllAsRead, 
+    removeNotification,
+    showSuccessNotification,
+  } = useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -156,13 +166,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <header className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Notifications */}
+              <NotificationManager
+                notifications={notifications}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+                onRemove={removeNotification}
+              />
+              
+              {/* Theme toggle */}
+              <ThemeToggle />
+              
               {/* Emergency button - always visible */}
               <Link to="/emergency">
                 <Button 
                   variant="destructive" 
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 hover-elevate"
                   data-testid="button-emergency-header"
                 >
                   <AlertCircle className="h-4 w-4" />

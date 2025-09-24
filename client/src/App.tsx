@@ -1,6 +1,7 @@
 import { IonApp, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Redirect } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,32 +9,35 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { EmergencyButton } from "@/components/EmergencyButton";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import AuthPage from "@/pages/AuthPage";
-import Dashboard from "@/pages/Dashboard";
-import ReportsPage from "@/pages/ReportsPage";
-import UsersPage from "@/pages/UsersPage";
-import VisitorsPage from "@/pages/VisitorsPage";
-import CampaignsPage from "@/pages/CampaignsPage";
-import ChecklistPage from "@/pages/ChecklistPage";
-import DrillsPage from "@/pages/DrillsPage";
-import EmergencyPage from "@/pages/EmergencyPage";
-import SchoolMapPage from "@/pages/SchoolMapPage";
-import SurveillancePage from "@/pages/SurveillancePage";
-import NoticesPage from "@/pages/NoticesPage";
-import NotFound from "@/pages/not-found";
+
+// Lazy loading das páginas para melhor performance
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const ReportsPage = lazy(() => import("@/pages/ReportsPage"));
+const UsersPage = lazy(() => import("@/pages/UsersPage"));
+const VisitorsPage = lazy(() => import("@/pages/VisitorsPage"));
+const CampaignsPage = lazy(() => import("@/pages/CampaignsPage"));
+const ChecklistPage = lazy(() => import("@/pages/ChecklistPage"));
+const DrillsPage = lazy(() => import("@/pages/DrillsPage"));
+const EmergencyPage = lazy(() => import("@/pages/EmergencyPage"));
+const SchoolMapPage = lazy(() => import("@/pages/SchoolMapPage"));
+const SurveillancePage = lazy(() => import("@/pages/SurveillancePage"));
+const NoticesPage = lazy(() => import("@/pages/NoticesPage"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   
-  console.log('ProtectedRoute - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner 
+          size="lg" 
+          message="Carregando sistema de segurança..." 
+          className="animate-in fade-in-0 duration-500"
+        />
       </div>
     );
   }
@@ -43,10 +47,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   return (
-    <>
-      <DashboardLayout>{children}</DashboardLayout>
+    <div className="animate-in fade-in-0 duration-300">
+      <DashboardLayout>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-32">
+            <LoadingSpinner message="Carregando página..." />
+          </div>
+        }>
+          {children}
+        </Suspense>
+      </DashboardLayout>
       <EmergencyButton />
-    </>
+    </div>
   );
 }
 

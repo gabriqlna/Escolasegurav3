@@ -100,6 +100,11 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-up": "slide-up 0.3s ease-out", 
+        "bounce-soft": "bounce-soft 0.6s ease-out",
+        "pulse-success": "pulse-success 2s infinite",
+        "shake": "shake 0.82s cubic-bezier(.36,.07,.19,.97) both",
       },
     },
   },
