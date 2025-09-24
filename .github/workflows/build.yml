@@ -1,0 +1,129 @@
+name: Build and Test - School Security System
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  NODE_VERSION: '20'
+  EXPO_SDK_VERSION: '51'
+
+jobs:
+  test-web:
+    name: Test Web Application
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Type check
+      run: npm run check
+      
+    - name: Build web application
+      run: npm run build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-build
+        path: dist/
+        retention-days: 30
+        
+  build-mobile:
+    name: Build React Native Application
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./mobile
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: mobile/package-lock.json
+        
+    - name: Install Expo CLI
+      run: npm install -g @expo/cli@latest
+      
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Type check
+      run: npx tsc --noEmit
+      
+    - name: Export for web
+      run: npx expo export --platform web
+      
+    - name: Upload mobile build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mobile-web-build
+        path: mobile/dist/
+        retention-days: 30
+        
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    defaults:
+      run:
+        working-directory: ./mobile
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: mobile/package-lock.json
+        
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install Expo CLI and EAS CLI
+      run: |
+        npm install -g @expo/cli@latest
+        npm install -g eas-cli@latest
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Create preview build (requires EAS account)
+      run: |
+        echo "Note: This requires EAS account setup and authentication"
+        echo "For local builds, use: npx expo run:android"
+        # eas build --platform android --profile preview --non-interactive
+        
+    - name: Upload Android artifacts (placeholder)
+      run: |
+        echo "Android build would be uploaded here"
+        echo "Actual APK building requires EAS Build service or local Android setup"

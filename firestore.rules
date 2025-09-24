@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - strict access control
+    match /users/{userId} {
+      // Users can read their own document or direcao can read all users
+      allow read: if request.auth != null && 
+        (request.auth.uid == userId 
+         || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'direcao'
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true));
+      
+      // Users can only create their own document with limited fields
+      allow create: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll(['name', 'email', 'role', 'isActive'])
+        && request.resource.data.role == 'aluno' // Only aluno role allowed on creation
+        && request.resource.data.isActive == true
+        && request.resource.data.email == request.auth.token.email;
+      
+      // Users can only update their own profile (limited fields)
+      allow update: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['name']) // Only name updates allowed
+        && request.resource.data.role == resource.data.role // Role cannot be changed by user
+        && request.resource.data.isActive == resource.data.isActive; // isActive cannot be changed by user
+      
+      // Only direcao can change roles and active status
+      allow update: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'direcao'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Reports collection - controlled access
+    match /reports/{reportId} {
+      // Authenticated users can create reports
+      allow create: if request.auth != null
+        && (
+          // Anonymous reports (no reporterId set)
+          (!request.resource.data.keys().hasAny(['reporterId']) && request.resource.data.isAnonymous == true)
+          ||
+          // Identified reports (reporterId must match authenticated user)
+          (request.resource.data.reporterId == request.auth.uid && request.resource.data.isAnonymous == false)
+        )
+        && request.resource.data.keys().hasAll(['title', 'description', 'category', 'priority', 'isAnonymous', 'timestamp', 'status']);
+      
+      // Students can only read their own reports, staff and direcao can read all
+      allow read: if request.auth != null 
+        && (
+          resource.data.reporterId == request.auth.uid
+          || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true)
+        );
+      
+      // Only funcionario and direcao can update reports
+      allow update: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      
+      // Only direcao can delete reports
+      allow delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'direcao'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Emergency alerts collection - strict RBAC with field validation
+    match /emergencyAlerts/{alertId} {
+      // All authenticated users can read emergency alerts
+      allow read: if request.auth != null;
+      
+      // Only funcionario and direcao can create alerts with strict validation
+      allow create: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true
+        && request.resource.data.keys().hasOnly(['message', 'location', 'triggeredBy', 'triggeredByName', 'isResolved', 'resolvedBy', 'resolvedByName', 'resolvedAt', 'timestamp'])
+        && request.resource.data.triggeredBy == request.auth.uid
+        && request.resource.data.isResolved == false
+        && request.resource.data.resolvedBy == null
+        && request.resource.data.resolvedByName == null
+        && request.resource.data.resolvedAt == null;
+      
+      // Only funcionario and direcao can update alerts (resolve only) - strict field immutability
+      allow update: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['isResolved', 'resolvedBy', 'resolvedByName', 'resolvedAt'])
+        && request.resource.data.isResolved == true
+        && request.resource.data.resolvedBy == request.auth.uid
+        && resource.data.isResolved == false // Can only resolve unresolved alerts
+        // Enforce immutability of original alert fields
+        && request.resource.data.message == resource.data.message
+        && request.resource.data.location == resource.data.location
+        && request.resource.data.triggeredBy == resource.data.triggeredBy
+        && request.resource.data.triggeredByName == resource.data.triggeredByName
+        && request.resource.data.timestamp == resource.data.timestamp;
+      
+      // No one can delete emergency alerts - maintain audit trail
+      allow delete: if false;
+    }
+    
+    // Notices collection - funcionario and direcao can manage
+    match /notices/{noticeId} {
+      allow read: if request.auth != null; // All authenticated users can read notices
+      allow create, update, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Visitors collection - funcionario and direcao can manage
+    match /visitors/{visitorId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      allow create, update, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Occurrences collection - funcionario and direcao can manage
+    match /occurrences/{occurrenceId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      allow create, update, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Checklist items collection - funcionario and direcao can manage
+    match /checklistItems/{itemId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+      allow create, update, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Drills collection - funcionario and direcao can manage
+    match /drills/{drillId} {
+      allow read: if request.auth != null; // All authenticated users can read drill schedules
+      allow create, update, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Campaigns collection - funcionario and direcao can manage
+    match /campaigns/{campaignId} {
+      allow read: if request.auth != null; // All authenticated users can read campaigns
+      allow create, update, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['funcionario', 'direcao']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+    
+    // Deny all other collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

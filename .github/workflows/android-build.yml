@@ -1,0 +1,127 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-24.04
+    
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+        
+    - name: Install global dependencies
+      run: |
+        npm install -g @ionic/cli @capacitor/core @capacitor/cli
+        
+    - name: Install project dependencies
+      run: |
+        npm ci
+        
+    - name: Build web application  
+      env:
+        VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+        VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      run: |
+        npm run build
+        
+    - name: Add Android platform (if not exists)
+      run: |
+        npx cap add android || echo "Android platform already exists"
+        
+    - name: Sync Capacitor
+      run: |
+        npx cap sync android
+        
+    - name: Make gradlew executable
+      run: |
+        chmod +x android/gradlew
+        
+    - name: Build Debug APK
+      run: |
+        cd android
+        ./gradlew assembleDebug
+        
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+        
+    # Build signed release APK only on main branch
+    - name: Decode Keystore
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE }}
+      run: |
+        if [ ! -z "$KEYSTORE_BASE64" ]; then
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/keystore.jks
+        fi
+        
+    - name: Build Signed Release APK
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        chmod +x android/gradlew
+        cd android
+        if [ -f keystore.jks ] && [ ! -z "$KEYSTORE_PASSWORD" ] && [ ! -z "$KEY_ALIAS" ] && [ ! -z "$KEY_PASSWORD" ]; then
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=keystore.jks \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+        else
+          echo "Keystore secrets not configured, skipping signed build"
+          ./gradlew assembleRelease
+        fi
+        
+    - name: Upload Signed APK
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apk
+        path: android/app/build/outputs/apk/release/app-release.apk
+        
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        
+    - name: Cache Node modules
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: node-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+    # Notify completion
+    - name: Build Summary
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "📦 Debug APK available as artifact"
+        if [ "$GITHUB_REF" == "refs/heads/main" ]; then
+          echo "🚀 Release APK available for main branch"
+        fi
