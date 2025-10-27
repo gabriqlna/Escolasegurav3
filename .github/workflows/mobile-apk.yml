@@ -61,7 +61,7 @@ jobs:
           curl -L "${{ steps.build.outputs.build_url }}" -o escola-seguranca.apk
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: success()
         with:
           name: escola-seguranca-${{ github.event.inputs.profile || 'preview' }}-${{ github.sha }}
